@@ -1,0 +1,314 @@
+---
+title: "231B Section 1"
+author: "Chris Carter \\ https://github.com/unc421/231B"
+date: "January 22, 2018"
+output:
+  slidy_presentation:
+      fig_height: 5
+      font_adjustment: +1
+---
+
+```{r, echo=FALSE}
+# libraries
+library(png)
+library(grid)
+library(ggplot2)
+library(xtable)
+
+```
+
+
+Today
+=====================================================================
+1. Overview of sections
+2. Recap of today's lecture
+3. Simulations in R: the sample mean
+4. Potential outcomes
+4. Functions in R: the difference of two means
+
+
+Sections
+=====================================================================
+
+### Two goals:
+- Illustrating and reviewing the concepts covered in lecture
+- Going from learning R to programming in R
+
+
+----
+
+Coding resources
+===============================================
+
+[Six steps to a better relationship with your future self.](http://polmeth.wustl.edu/methodologist/tpm_v18_n2.pdf)
+
+For some sections, we will be using codeshare: http://www.codeshare.io/NQ7Gn
+
+We will be writing simulations and functions much of the time - some material to revisit the basics:
+
+* Functions: [General thought on what makes a good function](http://nicercode.github.io/guides/functions/), [beginner](http://nicercode.github.io/intro/writing-functions.html), [intermediate/advanced](http://adv-r.had.co.nz/Functions.html). Shalizi on functions, [part 1](http://www.stat.cmu.edu/~cshalizi/statcomp/14/lectures/06/lecture-06.pdf) & [part 2](http://www.stat.cmu.edu/~cshalizi/statcomp/14/lectures/07/lecture-07.pdf).
+* Simulations: [Repeating things](http://nicercode.github.io/guides/repeating-things/), [flow control and looping](http://www.stat.cmu.edu/~cshalizi/statcomp/14/lectures/03/lecture-03.pdf).
+
+
+Problem Sets
+=====================================================================
+- Send a digital copy to ps231b.spring2019@gmail.com
+- *Compiled versions* of your code. ".R" files will not be considered for grading. 
+- Use [R markdown](http://rmarkdown.rstudio.com/pdf_document_format.html)
+- If you have questions, [this cheatsheet might be helpful] (https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf) 
+- When debugging your code, [you might find Cosma Shalizi's advice helpful](http://www.stat.cmu.edu/~cshalizi/statcomp/14/lectures/13/lecture-13.pdf)
+- Practice [defensive programming](https://enterprisecraftsmanship.com/2016/04/27/defensive-programming-the-good-the-bad-and-the-ugly/)
+- Problem sets due at 11:59 pm on Sundays
+
+
+----
+
+Why program? (Shalizi)
+=====================================================================
+
+- **Independence**: Otherwise, you rely on someone else having given you exactly the right tool
+
+- **Honesty**: Otherwise, you end up distorting your problem to match the tools you have
+
+- **Clarity**: Working with a machine can discipline your thinking, force you to simply and clearly state what you want to do, and create an easy way to replicate work
+
+> Programs should be written for people to read, and only incidentally for
+machines to execute (Abelson and Sussman)
+
+- Machines are made out of machines; functions are made out of functions. The route to good programming is to take the big transformation and break it down into smaller ones, and then break those down, until you come to tasks which the built-in functions can do
+
+
+R markdown
+=====================================================================
+
+Why use R markdown? R markdown will be a useful tool for you to produce your problem sets. It allows you to produce a single pdf that includes your code, the output, and a space for interpreting your results. Each week, I'll upload the R markdown code used to generate my section notes. To the extent it is useful, you should feel free to use the files for these notes as a template for creating your problem sets. 
+
+
+2. Recap of today's lecture
+=====================================================================
+
+* What is a simple random sample? 
+* What does unbiasedness mean? 
+* What is a parameter? A statistic?
+
+
+3. A simulation in R
+======================================================================
+
+First we will need to "create" a population, a box of tickets. Each ticket corresponds to a village in a given Peruvian state. The value on each ticket indicates that state's political conservatism score. 0 is the most liberal and 10 is the most conservative. 
+
+```{r}
+conservative <- c(4,5,7,10,7,8,9,3,5,8,9,3,2,3,4,6,10,4,6,7,8,9,2)
+
+N <- length(conservative) # number of observations in the population
+
+N
+
+pop_mean <- mean(conservative) # population mean
+pop_mean 
+
+pop_sd <- sd(conservative) # population standard deviation
+pop_sd
+```
+
+----
+
+We will draw several random samples of 8 observation without replacement. 
+```{r}
+
+##Set a seed for replication
+set.seed(12345)
+
+s1 <- sample(conservative, size=8, replace = FALSE)
+
+s2 <- sample(conservative, size=8, replace = FALSE)
+
+s3 <- sample(conservative, size=8, replace = FALSE)
+
+s4 <- sample(conservative, size=8, replace = FALSE)
+
+samples <- rbind(s1, s2, s3, s4)
+
+samples
+```
+
+----
+
+Remember the population mean: `r pop_mean`
+
+And the means of the samples 
+
+```{r} 
+apply(samples, MARGIN=1, FUN=mean) 
+
+##Compare to the population mean
+
+pop_mean
+```
+
+By chance each given sample mean may be a little higher or lower than the population mean. 
+
+How can we use R to show that the sample mean is an unbiased estimator of the population mean?
+
+----
+
+For this, we will write a simulation. We will repeat the sample process 10,000 times.
+
+```{r}
+
+sample_mean <- NA
+
+for (i in 1:10000){
+  
+  sample <- sample(conservative, size=8, replace = FALSE)
+  sample_mean[i] <- mean(sample)
+  
+}
+```
+
+----
+
+```{r}
+par(mfrow=c(1,1))
+plot(density(sample_mean), col = "blue", lwd = 3,
+     main = "Distribution of sample means")
+abline(v = pop_mean, col = "red", lwd = 2)
+
+```
+
+Let's now look at the distribution of the sample mean as n gets closer to N. 
+======================================================================
+
+So far, n=8. We now need a new simulation that adds a new step: we need to vary the size of n.
+
+----
+
+```{r, eval=FALSE}
+
+rep <- 10000
+
+# The first loop varies m
+for (n in 9:20){
+
+  sample_mean <- NA #creating an object to store the results of the second loop
+  
+  # The second loop goes through the 10000 simulations
+  for (i in 1:rep){
+      
+    #we first get a random sample of size m from the population
+    sample <- sample(conservative, size=n, replace = FALSE)
+    #and then calculate and store the sample mean
+    sample_mean[i] <- mean(sample)
+  }
+  
+  #finally, we plot the distribution of the 10000 sample means for the relevant m
+  lines(density(sample_mean), lwd=3,
+        #note that this next line of code varies the color of the line according to m 
+        #so that we can distinguish the different distributions
+        col=paste0("grey",140-(7*n)))
+}
+
+```
+
+What do we expect? Why?
+
+----
+
+```{r, echo=FALSE}
+
+plot(density(sample_mean), col="blue", ylim=c(0,1.6),
+     main="Distribution of sample means", lwd=3)
+abline(v=pop_mean, col="red", lwd=3)
+
+rep <- 10000
+
+for (n in 9:20){
+  sample_mean <- NA
+  
+  for (i in 1:rep){
+    sample <- sample(conservative, size=n, replace = FALSE)
+    sample_mean[i] <- mean(sample)
+  }
+  
+  lines(density(sample_mean), lwd=3,
+        col=paste0("grey",140-(7*n)))
+}
+
+```
+
+How does unbiasedness change based on whether we are sampling with/without replacement?
+
+4. Potential outcomes
+======================================================================
+
+Generally, we don't just care about outcomes, but rather why we observe those outcomes. Why are some villages in Peru more conservative than others? Maybe we think that villages whose citizens benefit from welfare spending by the central government will be less conservative than had they not benefited. We find take a simple random sample of villages and find the following.  
+
+```{r, echo=FALSE}
+
+village <- seq(1,10)
+  
+program <- c(0, 1, 1, 0, 1, 1, 0, 1, 0, 1)
+
+conservative <- c(5, 6, 7, 4, 3, 6, 2, 9, 2, 2)
+
+cbind.data.frame(village, program, conservative)
+
+
+```
+----
+
+What is the difference in means? 
+```{r}
+mean(conservative[program == 1], na.rm = TRUE) - 
+  mean(conservative[program == 0], na.rm = TRUE)
+```
+
+Even if the program were randomly assigned, are we confident this is a causal effect? 
+
+----
+
+Let's make our life simpler for the future and write a difference in means function.
+```{r}
+
+diff_means <- function(outcome, treatment){ 
+  
+  # Calculating difference in means
+  mean1 <- mean(outcome[treatment==1], na.rm=T)
+  mean0 <- mean(outcome[treatment==0], na.rm=T)
+  diff <- mean1 - mean0
+  
+  # Calculating number of observations
+  N <- length(na.omit(outcome))
+  
+  # Preparing output
+  res <- c(mean1, mean0, diff, N)
+  names(res) <- c("Mean 1", "Mean 0", "Difference", "N")
+  
+  return(c(res))
+}
+```
+
+----
+
+Let's test it!
+```{r}
+
+diff_means(conservative, program)
+
+```
+
+----
+
+Remember, our data looks like this 
+
+```{r, echo = FALSE, results = "asis"}
+print(xtable(cbind.data.frame(village, 
+                              program, conservative), digits = 0), 
+      include.rownames = FALSE, 
+      type = "html")
+
+```
+
+How would we write the potential outcomes schedule if there were no effect for any unit? How would we draw this box model? 
+
+
