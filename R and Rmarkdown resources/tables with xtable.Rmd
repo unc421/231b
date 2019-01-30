@@ -1,0 +1,44 @@
+---
+title: "Xtable Example"
+author: "Chris Carter"
+date: "January 29, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(xtable)
+
+```
+First let's create a data frame
+
+
+```{r}
+gg_data <- as.data.frame(cbind(c(10,15,20,20,10,15,15), 
+                               c(15,15,30,15,20,15,30)))
+names(gg_data) <- c("Y_i0", "Y_i1")
+```
+
+Let's create some more variables to make our table interesting: let's find the unit causal effect for each unit (i.e., the difference in the potential outcome under treatment and potential outcome under control)
+
+
+```{r}
+
+gg_data$unit_causal_effect <- gg_data$Y_i1 - gg_data$Y_i0
+
+```
+
+Notice we are doing something different with our chunk header below. We include: echo = FALSE and results = "asis." The echo command tells rmarkdown not to print the code itself and to only print the output, in this case the table. The results command render the table as html rather than just the html code. Try playing around with removing these commands to get a better sense of what they're doing. 
+
+```{r, echo = FALSE, results = "asis"}
+
+## Here, we are printing our xtable
+## Make sure you've read in (and installed beforehand) the Xtable package
+## As with all functions, this one has some additional things we've added. Try running print(xtable(gg_data)) to understand what the digits, include.rownames, type commands are doing within the function.
+
+tab <- xtable(gg_data, digits = 0)
+
+names(tab) <- c("Potential outcome (control)", "Potential outcome (treat)", "Unit causal effect")
+  print(tab, include.rownames = FALSE, 
+      type = "html")
+
+```
