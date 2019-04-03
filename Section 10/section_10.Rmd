@@ -1,0 +1,403 @@
+---
+title: "Section 10"
+author: "Chris Carter"
+date: "April 1, 2019"
+output: slidy_presentation
+---
+
+Today: Beyond OLS
+===============================
+
+- OLS vs GLS vs GLM: What are they? How are they alike? Different?
+- Deriving and plotting the likelihood function
+- Finding the MLE and its SE
+- Reporting MLE results
+
+
+---
+
+>- Let's go back to OLS.
+
+>- A first concern was assumptions on the disturbances (or errors)
+
+>- What are those assumptions?
+
+
+---
+
+GLS
+==============================
+
+>- With GLS, we assume that the $cov(\epsilon|X) = G$
+
+>- $\hat{\beta}_{GLS} = \beta + (X'G^{-1}X)^{-1}X'G^{-1}\epsilon$. Is this conditionally unbiased?
+
+>- $cov(\hat{\beta}_{GLS}|X) = (X'G^{-1}X)^{-1}$
+
+>- $cov(\hat{\beta}_{fGLS}|X) = (X'\hat{G}^{-1}X)^{-1}$
+
+>- Often, $\hat{\beta}_{FGLS}$ will be biased. Why?
+
+
+---
+
+MLE
+===============
+
+>- What else do we assume in OLS? Think about the model itself.
+
+>- Sometimes we think linearity is an unrealistic assumption. 
+
+>- What are we trying to minimize or maximize in OLS? 
+>- Here, we are trying to maximize a likelihood.
+
+>- And remember, we are still trying to estimate parameters.
+
+---
+
+What if we try to estimate the following?
+
+$$P(Y=1|X) = X\beta$$
+
+>- We can instead estimate $$P(Y=1|X) = F(X\beta)$$,$$P(Y=0|X) = 1 - F(X\beta)$$, and $$P(Y|X) = F(X\beta)^{y} (1-F(X\beta))^{1-y}$$
+
+
+---
+>- Let's say we want to estimate the percentage of people in California who are on Obamacare. We take a survey sample. 
+
+>- We can write the distribution function as follows: $$f(p|X_{i}) = p^{X_{i}}(1-p)^{1-X_{i}}$$
+
+>- The joint distribution, which will be our likelihood function is: $$\prod_{i=1}^n p^{X_{i}}(1-p)^{1-X_{i}}$$
+(What assumption do we need here?)
+
+>- We want to maximize the likelihood of observing $p$, given our data. Ok...what does this mean, and how do we do it? 
+
+>- Taking derivatives of products is a tough task. So, instead, we take a log. $$log(\prod_{i=1}^n p^{X_{i}}(1-p)^{1-X_{i}})$$. (Nice thing about logs is that they are monotonic and the extrema of a log-transformed function will be the same as the extrema of the original function)
+
+---
+
+>- $$log(\prod_{i=1}^n p^{X_{i}}(1-p)^{1-X_{i}})$$ 
+
+>- $$\sum_{i=1}^n log(p^{X_{i}}(1-p)^{1-X_{i}})$$
+
+>- $$\sum_{i=1}^n \Big[ X_{i}log(p) + (1-X_{i})log(1-p))\Big]$$
+
+>- $$log(p)\sum_{i=1}^n X_{i} + log(1-p)\sum_{i=1}^n(1-X_{i})$$
+
+>- $$log(p)n\bar{X} + log(1-p)(n-n\bar{X})$$
+
+>- Now, we can take a derivative of the log likelihood function ($L_{n}(p)$) with respect to $\hat{p}$, our sample estimate of $p$.
+
+$$\frac{\partial logL}{\partial p} = 0 = \frac{n\bar{X}}{p}-\frac{n-n\bar{X}}{1-p}$$
+
+$$n\bar{X}(1-p) = p(n-n\bar{X})$$
+$$p = \bar{X}$$
+
+---
+
+
+---
+>- We can also show that $\widehat{\beta_{MLE}}=\widehat{\beta_{OLS}}$ under certain assumptions, particularly if we assume errors are normally distributed.
+
+
+---
+
+Probit
+===================
+
+Probit functions take the following form:$$P(Y_{i}=0|X) = 1- \Phi(X_{i}\beta), \text{  } P(Y_{i}=1|X)= \Phi(X_{i}\beta)$$
+
+where $\Phi$ is the link function. What does that mean?
+
+>- Let's say we want to know what factors affect a person's likelihood of having health care. Our outcome is thus whether an individual has health care. We measure age, education, and partisanship. Thus, for a person, whose fifty years old with twelve years of education and is a republican, we can generate a predicted $Y_{i}$ by using $\Phi(\beta_{age}\times 50 + \beta_{ed}\times 12 + \beta_{republican})$. If we assume that the link function is standard normal, then we can calculate a predicted probability using the cumulative distribution function of the standard normal. What probability value in the CDF corresponds to the observed value? 
+
+---
+
+Latent variables formulation
+
+Has health care if:
+$$X_{i}\beta + U_{i} > 0$$
+
+>- $$P(Y_{i} = 1|X) = P(X_{i}\beta + U_{i} > 0)$$
+
+>- $$P(Y_{i} = 1|X) = P(U_{i} < X_{i}\beta)$$
+
+>- Under what assumption about the latent variable, $U$, is this equivalent to the probit?
+
+---
+
+Logit
+====================================
+
+>- Stochastic component:
+$$Y_i \sim Y_{Bernoulli}(y_i|\pi_i) = (\pi_i)^{y_i} (1-\pi_i)^{(1-y_i)}$$
+>- But what is $\pi_i$? For that we need a link function. 
+
+>- In a logit, we use a different distribution function (instead of the normal): $\Lambda(x) = \frac{e^x}{1+e^x}$
+
+
+
+---
+
+The Logistic Link Function
+===============================
+
+Systematic component: 
+
+$$\sigma(x) = \frac{1}{1+e^{-x}} = \frac{e^x}{1+e^x}$$
+
+Note that $$\sigma(x) \in [0,1]$$ for all $x$
+
+We can program this:
+
+```{r}
+logistic <- function(x){ exp(x) / (1 + exp(x)) }
+
+```
+
+---
+
+```{r}
+
+curve(logistic(x), xlim=c(-8, 8), xlab="x", main="CDF of the logistic distribution",
+      ylab="cumulative probability", col="blue", lwd=3)
+
+```
+
+---
+
+
+>- In a logit, $L = \prod_{i=1}^n [\Lambda(X\beta)]^{y_{i}}[1-\Lambda(X\beta)]^{1-y_{i}}$ and find values of $\hat{\beta}$ that maximize $L$.
+
+>- With covariates, we have$$\Lambda(X\beta) = \frac{1}{1+e^{-X\beta}} = \frac{e^{X\beta}}{1+e^{X\beta}}$$
+
+>- So: $$P(y_i=1|\beta) = \pi_i= \frac{1}{1+e^{-X\beta}}$$ $$P(y_i=0|\beta) = 1 - \pi_i= 1 - (\frac{1}{1+e^{-X\beta}})$$
+
+
+---
+
+A small dataset
+
+```{r}
+
+Y <- c(1, 0, 1, 0, 0, 1, 1)
+x <- c(.5, .3, .45, .4, .25, .7, .9)
+
+cbind(Y, x)
+
+```
+
+
+
+---
+
+$$P(y|\pi) = \prod_{i=1}^{n} \pi^{y_i} (1-\pi_i)^{1-y_i}$$
+
+>- where $\pi_i = \Lambda(x_i\beta) = \frac{1}{1+e^{-x_i\beta}}$
+
+>- And so the likelihood is $$L = P(y|X\beta) = \prod_{i=1}^{n} \Lambda(x_i\beta)^{y_i} (1-\Lambda(x_i\beta))^{1-y_i}$$
+
+>- And the log-likelihood $$ lnL = \sum_{i=1}^{n} y_i * ln[\Lambda(x_i\beta)] + (1-y_i) * ln[1-\Lambda(x_i\beta)]$$
+
+The derivative of this has no closed-form solution and thus we need to iterate to find the $\hat{\beta}$ that maximizes lnL. 
+
+----
+
+We can program the likelihood in `R`:
+
+```{r}
+
+LL <- function(beta, x, y){
+    
+    odds <- beta * x
+    
+    rate <- 1 / (1 + exp(-odds))
+    
+    sum( y * log(rate) + (1 - y) * log(1 - rate) )
+}
+
+```
+
+---
+
+And we can plot the log-likelihood of our fake data:
+
+```{r}
+
+LL_example <- function(x){
+    
+    odds <- x * c(.5, .3, .4, .4, .25)
+    
+    rate <- 1 / (1 + exp(-odds))
+    
+    y <- c(1, 0, 1, 0, 0)
+    
+    sum(ifelse(y==1, log(rate), log(1 - rate)))
+    
+}
+
+betas <- seq(-10, 10, by=.01)
+ll_betas <- unlist(lapply(betas, FUN=LL_example)) # no intercept here
+```
+
+---
+
+```{r, fig.height=4}
+par(mfrow=c(1,2))
+plot(betas, ll_betas, col="blue", type="l", lwd=3, ylab="log-likelihood")
+plot(betas, ll_betas, col="blue", type="l", lwd=3, ylab="log-likelihood", xlim=c(-5, 5))
+
+```
+
+What's the value of $\beta$ tha maximizes the log-likelihood?
+
+---
+
+Getting the MLE.
+
+```{r}
+
+beta.start <- 0
+out  <-  optim(beta.start, 
+            fn=LL,
+            x=x,y=Y,
+            hessian=T,
+            method="L-BFGS-B",
+            control=list(fnscale=-1))
+out
+
+```
+
+---
+
+```{r}
+
+mle <- out$par
+mle
+
+glm(Y~0+x, family=binomial(logit))
+
+##Fisher information (-H^-1)
+vcov <- -solve(out$hessian)
+
+
+```
+
+
+
+
+How should we present the results?
+==========================
+
+1. Simulate betas
+
+```{r}
+
+simbetas <- rnorm(100000, mle, sqrt(vcov)) 
+par(mfrow=c(1,1))
+plot(density(simbetas), col="slateblue", lwd=3)
+```
+
+---
+
+2. Simulate predicted value
+
+Let's say we get econ data for one more observation and we want to predict the probability of $y=1$
+
+```{r}
+
+new_obs <- .45 # our new data point
+
+cov <- simbetas * new_obs
+pred.p <- 1 / (1+exp(-cov))
+mean(pred.p)
+```
+
+---
+
+```{r}
+hist(pred.p, col="goldenrod", main="predicted probability")
+abline(v=mean(pred.p), col="red", lwd=3)
+
+quantile(pred.p, probs = c(0.25, 0.75))
+
+```
+
+---
+
+3. Simulate expected values
+```{r}
+
+# for the binomial distribution, the expected value equals 
+# the rate, so to get the expected value we can just take
+# the expectation of the predicted probabilities (for other
+# distributions this might not hold, and we might want to 
+# do the simulation of the stochastic component as well)
+# so here we could just do
+mean(pred.p)
+
+```
+
+---
+
+Simulate first differences
+
+```{r}
+
+new_obs
+new_obs.better <- 0.65
+
+cov <- simbetas * new_obs.better
+pred.p.2 <- 1 / (1 + exp(-cov))
+
+# to get the expected value, here we can again just take the 
+# mean of the predicted probabilities
+mean(pred.p.2)
+
+
+#now lets get the first difference
+firs.diff <- mean(pred.p.2) - mean(pred.p)
+firs.diff 
+```
+
+An increase in the independent variable is associated with an increase in the outcome.
+
+---
+
+Predicted probabilities plot
+
+How would we do the plot of predicted probabilities?
+
+```{r}
+# Let's take values of X from -1 to 1
+x_sim <- seq(-1, 1, by=.01)
+
+pred.prob <- matrix(NA, length(x_sim), 3)
+
+for(i in 1:length(x_sim)){
+
+    cov <- simbetas * x_sim[i]
+    pred.p <- 1/(1+exp(-cov))
+    
+    pred.prob[i,1] <- mean(pred.p)
+    pred.prob[i,2] <- quantile(pred.p, probs=.05) # lower CI
+    pred.prob[i,3] <- quantile(pred.p, probs=.95) # upper CI
+}
+
+
+
+```
+
+---
+
+```{r}
+
+plot(x_sim, pred.prob[,1], 
+     col="slateblue", type="l", 
+     lty=1, lwd=3, main="Predicted probabilities",
+     xlab="x", ylab="predicted probability", ylim=c(min(pred.prob), max(pred.prob)))
+lines(x_sim,pred.prob[,2], col="slateblue", type="l", lty=3, lwd=2 )
+lines(x_sim,pred.prob[,3], col="slateblue", type="l", lty=2, lwd=2 )
+
+```
+
